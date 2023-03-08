@@ -1,13 +1,16 @@
 import torch
 import argparse
+import os
 import torch.nn as nn
-import torch.optim as optim
-import time
-
+from utils.metrics import ClassificationMetrics
+from comet_ml import Artifact, Experiment
+from utils.utils import generate_model_config, read_cfg, get_optimizer, get_device, generate_hyperparameters, save_model, save_plots, SaveBestModel
+from datasets.dataset import CarsDataModule
 from tqdm.auto import tqdm
-from models.models import build_model
-from datasets.dataset import get_datasets, get_data_loaders
-from utils.utils import save_model, save_plots
+from models.models import create_model
+from utils.logger import get_logger
+import argparse
+import torch.nn as nn
 
 seed = 42
 torch.manual_seed(seed)
@@ -15,20 +18,8 @@ torch.cuda.manual_seed(seed)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = True
 
-# Construct the argument parser.
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    '-e', '--epochs', type=int, default=10,
-    help='Number of epochs to train our network for'
-)
-parser.add_argument(
-    '-lr', '--learning-rate', type=float,
-    dest='learning_rate', default=0.001,
-    help='Learning rate for training the model'
-)
-args = vars(parser.parse_args())
 
-def train(model, train_loader, optimizer, criterion, device):
+def train_one_epoch(model, train_loader, optimizer, criterion, device):
     model.train()
     print('Training')
     train_running_loss = 0.0
@@ -52,22 +43,24 @@ def train(model, train_loader, optimizer, criterion, device):
         loss.backward()
         # Update the weights.
         optimizer.step()
-
     # Loss and accuracy for the complete epoch.
     epoch_loss = train_running_loss / counter
     epoch_acc = 100. * (train_running_correct / len(train_loader.dataset))
+    logger.log_metric("train_loss", epoch_loss)
+    logger.log_metric("train_accuracy", epoch_acc)
+
     return epoch_loss, epoch_acc
 
-def validate(model, testloader, criterion, device):
+
+def validate_one_epoch(model, val_loader, criterion, device):
     model.eval()
     print('Validation')
     valid_running_loss = 0.0
     valid_running_correct = 0
     counter = 0
     with torch.no_grad():
-        for i, data in tqdm(enumerate(testloader), total=len(testloader)):
+        for i, data in tqdm(enumerate(val_loader), total=len(val_loader)):
             counter += 1
-            
             image, labels = data
             image = image.to(device)
             labels = labels.to(device)
@@ -79,63 +72,118 @@ def validate(model, testloader, criterion, device):
             # Calculate the accuracy.
             _, preds = torch.max(outputs.data, 1)
             valid_running_correct += (preds == labels).sum().item()
-        
     # Loss and accuracy for the complete epoch.
     epoch_loss = valid_running_loss / counter
-    epoch_acc = 100. * (valid_running_correct / len(testloader.dataset))
+    epoch_acc = 100. * (valid_running_correct / len(val_loader.dataset))
+
+    logger.log_metric("val_loss", epoch_loss)
+    logger.log_metric("val_accuracy", epoch_acc)
+
     return epoch_loss, epoch_acc
 
-if __name__ == '__main__':
-    # Load the training and validation datasets.
-    dataset_train, dataset_valid, dataset_classes = get_datasets()
-    print(f"[INFO]: Number of training images: {len(dataset_train)}")
-    print(f"[INFO]: Number of validation images: {len(dataset_valid)}")
-    # Load the training and validation data loaders.
-    train_loader, valid_loader = get_data_loaders(dataset_train, dataset_valid)
-    # Learning_parameters. 
-    lr = args['learning_rate']
-    epochs = args['epochs']
-    device = ('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Computation device: {device}")
-    print(f"Learning rate: {lr}")
-    print(f"Epochs to train for: {epochs}\n")
-    # Load the model.
-    model = build_model(
-        pretrained=True,
-        fine_tune=True, 
-        num_classes=len(dataset_classes)
-    ).to(device)
-    
-    # Total parameters and trainable parameters.
-    total_params = sum(p.numel() for p in model.parameters())
-    print(f"{total_params:,} total parameters.")
-    total_trainable_params = sum(
-        p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"{total_trainable_params:,} training parameters.")
-    # Optimizer.
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    # Loss function.
-    criterion = nn.CrossEntropyLoss()
+
+def train(model, train_loader, valid_loader, epochs):
     # Lists to keep track of losses and accuracies.
     train_loss, valid_loss = [], []
     train_acc, valid_acc = [], []
     # Start the training.
     for epoch in range(epochs):
         print(f"[INFO]: Epoch {epoch+1} of {epochs}")
-        train_epoch_loss, train_epoch_acc = train(model, train_loader, 
-                                                optimizer, criterion, device)
-        valid_epoch_loss, valid_epoch_acc = validate(model, valid_loader,  
-                                                    criterion, device)
+        train_epoch_loss, train_epoch_acc = train_one_epoch(
+            model, train_loader, optimizer, criterion, device)
+        valid_epoch_loss, valid_epoch_acc = validate_one_epoch(
+            model, valid_loader, criterion, device)
         train_loss.append(train_epoch_loss)
         valid_loss.append(valid_epoch_loss)
         train_acc.append(train_epoch_acc)
         valid_acc.append(valid_epoch_acc)
-        print(f"Training loss: {train_epoch_loss:.3f}, training acc: {train_epoch_acc:.3f}")
-        print(f"Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.3f}")
+        print(
+            f"Training loss: {train_epoch_loss:.3f}, training acc: {train_epoch_acc:.3f}")
+        print(
+            f"Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.3f}")
+        # save the best model till now if we have the least loss in the current epoch
+        save_best_model(valid_epoch_loss, epoch, model, optimizer, criterion)
         print('-'*50)
-        time.sleep(2)
     # Save the trained model weights.
     save_model(epochs, model, optimizer, criterion)
     # Save the loss and accuracy plots.
     save_plots(train_acc, valid_acc, train_loss, valid_loss)
     print('TRAINING COMPLETE')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="Argument for train the model")
+    parser.add_argument('-cfg', '--config', default="../Trainer/configs/effnetb0.yaml",
+                        type=str, help="Path to config yaml file")
+    args = parser.parse_args()
+    cfg = read_cfg(cfg_file=args.config)
+    hyperparameters = generate_hyperparameters(cfg)
+
+    LOG = get_logger(cfg['model']['backbone'])
+
+    LOG.info("Training Process Start")
+    logger = Experiment(api_key=cfg['logger']['api_key'],
+                        project_name=cfg['logger']['project_name'],
+                        workspace=cfg['logger']['workspace'])  # logger for track model in Comet ML
+    artifact = Artifact("Cars Artifact", "Model")
+    LOG.info("Comet Logger has successfully loaded.")
+
+    device = get_device(cfg)
+    LOG.info(f"{str(device)} has choosen.")
+    print(f"Computation device: {device}")
+    print(f"Epoch: {cfg['train']['num_epochs']}")
+    print(f"Learning Rate: {cfg['train']['lr']}")
+    print(f"Batch Size: {cfg['train']['batch_size']}\n")
+
+    # Load the model
+    kwargs = dict(weights=cfg['model']['weights'],
+                  output_class=cfg['model']['num_classes'], fine_tune=True)
+    backbone = create_model(
+        model_name=cfg['model']['backbone'],
+        **kwargs).to(device=device)
+    LOG.info(f"Backbone {cfg['model']['backbone']} succesfully loaded.")
+    print(backbone)
+
+    optimizer = get_optimizer(cfg, backbone)
+    LOG.info(f"Optimizer has been defined.")
+
+    # Total parameters and trainable parameters.
+    total_params = sum(p.numel() for p in backbone.parameters())
+    print(f"{total_params:,} total parameters.")
+    total_trainable_params = sum(p.numel()
+                                 for p in backbone.parameters() if p.requires_grad)
+    print(f"{total_trainable_params:,} training parameters.")
+
+    # Loss function.
+    criterion = nn.CrossEntropyLoss()
+    LOG.info(f"Criterion has been defined")
+
+    # initialize SaveBestModel class
+    save_best_model = SaveBestModel()
+
+    CarsData = CarsDataModule(cfg)
+    train_dl = CarsData.train_dataloader()
+    val_dl = CarsData.val_dataloader()
+    LOG.info(f"Dataset train and val loader successfully loaded.")
+
+    logger.log_parameters(hyperparameters)
+    LOG.info("Parameters has been Logged")
+
+    generate_model_config(cfg)
+    LOG.info("Model config has been generated")
+
+    train(backbone, train_dl, val_dl, cfg['train']['num_epochs'])
+
+    best_model_path = os.path.join(cfg['output_dir'], 'best_model.pth')
+    final_model_path = os.path.join(cfg['output_dir'], 'final_model.pth')
+    model_cfg_path = os.path.join(cfg['output_dir'], 'model-config.yaml')
+    acc_fig = os.path.join(cfg['output_dir'], 'acc_figure.png')
+    loss_fig = os.path.join(cfg['output_dir'], 'loss_figure.png')
+    artifact.add(best_model_path)
+    artifact.add(final_model_path)
+    artifact.add(model_cfg_path)
+    artifact.add(acc_fig)
+    artifact.add(loss_fig)
+    logger.log_artifact(artifact=artifact)
+    logger.log_metrics()

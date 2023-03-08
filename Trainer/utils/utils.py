@@ -14,6 +14,9 @@ class SaveBestModel:
         self.best_valid_loss = best_valid_loss
 
     def __call__(self, current_valid_loss, epoch, model, optimizer, criterion, cfg):
+        if not os.path.exists(cfg['output_dir']):
+            os.makedirs(cfg['output_dir'])
+
         if current_valid_loss < self.best_valid_loss:
             self.best_valid_loss = current_valid_loss
             print(f"\nBest validation loss: {self.best_valid_loss}")
@@ -23,19 +26,25 @@ class SaveBestModel:
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': criterion,
-            }, f"{cfg['output_dir']}best_model.pth")
+            }, os.path.join(cfg['output_dir'], 'best_model.pth'))
 
 
 def save_model(epoch, model, optimizer, criterion, cfg):
+    if not os.path.exists(cfg['output_dir']):
+        os.makedirs(cfg['output_dir'])
+
     torch.save({
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'loss': criterion,
-    },  f"{cfg['output_dir']}final_model.pth")
+    }, os.path.join(cfg['output_dir'], 'final_model.pth'))
 
 
 def save_plots(train_acc, valid_acc, train_loss, valid_loss, cfg):
+    if not os.path.exists(cfg['output_dir']):
+        os.makedirs(cfg['output_dir'])
+
     # accuracy plots
     plt.figure(figsize=(10, 7))
     plt.plot(
@@ -49,7 +58,7 @@ def save_plots(train_acc, valid_acc, train_loss, valid_loss, cfg):
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig(f"{cfg['output_dir']}accuracy.png")
+    plt.savefig(os.path.join(cfg['output_dir'], 'acc_figure.png'))
 
     # loss plots
     plt.figure(figsize=(10, 7))
@@ -64,7 +73,7 @@ def save_plots(train_acc, valid_acc, train_loss, valid_loss, cfg):
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig(f"{cfg['output_dir']}outputs/loss.png")
+    plt.savefig(os.path.join(cfg['output_dir'], 'loss_figure.png'))
 
 
 def read_cfg(cfg_file):
@@ -101,7 +110,7 @@ def get_optimizer(cfg, backbone):
 
 def generate_hyperparameters(train_cfg: dict):
     return {
-        'model': train_cfg.model.base,
+        'model': train_cfg.model.backbone,
         'model_input': train_cfg.model.input_size[0],
         'output_class': train_cfg.model.num_classes,
         'batch_size': train_cfg.train.batch_size,
@@ -113,7 +122,7 @@ def generate_hyperparameters(train_cfg: dict):
 
 def generate_model_config(train_cfg: dict):
     model_config = {
-        'model': train_cfg.model.base,
+        'model': train_cfg.model.backbone,
         'model_input': train_cfg.model.input_size[0],
         'output_class': train_cfg.model.num_classes,
         'model_file': 'best_model.pth'
@@ -127,5 +136,3 @@ def generate_model_config(train_cfg: dict):
     with open(save_path, "w") as yaml_file:
         yaml.safe_dump(model_config, yaml_file, sort_keys=False,
                        explicit_start=True, default_flow_style=None)
-
-
