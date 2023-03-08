@@ -5,7 +5,7 @@ import torch.optim as optim
 import time
 
 from tqdm.auto import tqdm
-from models.model import build_model
+from models.models import build_model
 from datasets.dataset import get_datasets, get_data_loaders
 from utils.utils import save_model, save_plots
 
