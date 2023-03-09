@@ -29,12 +29,12 @@ class SaveBestModel:
             }, os.path.join(cfg['output_dir'], 'best_model.pth'))
 
 
-def save_model(epoch, model, optimizer, criterion, cfg):
+def save_model(epochs, model, optimizer, criterion, cfg):
     if not os.path.exists(cfg['output_dir']):
         os.makedirs(cfg['output_dir'])
 
     torch.save({
-        'epoch': epoch,
+        'epoch': epochs,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'loss': criterion,
@@ -91,6 +91,7 @@ def get_device(cfg):
     else:
         raise NotImplementedError
     return result_device
+    # return device('cuda:0') if torch.cuda.is_available() else device('cpu')
 
 
 def get_optimizer(cfg, backbone):

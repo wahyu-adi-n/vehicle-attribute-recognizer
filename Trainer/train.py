@@ -82,11 +82,12 @@ def validate_one_epoch(model, val_loader, criterion, device):
     return epoch_loss, epoch_acc
 
 
-def train(model, train_loader, valid_loader, epochs):
+def train(model, train_loader, valid_loader, cfg):
     # Lists to keep track of losses and accuracies.
     train_loss, valid_loss = [], []
     train_acc, valid_acc = [], []
     # Start the training.
+    epochs = cfg['train']['num_epochs']
     for epoch in range(epochs):
         print(f"[INFO]: Epoch {epoch+1} of {epochs}")
         train_epoch_loss, train_epoch_acc = train_one_epoch(
@@ -102,19 +103,19 @@ def train(model, train_loader, valid_loader, epochs):
         print(
             f"Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.3f}")
         # save the best model till now if we have the least loss in the current epoch
-        save_best_model(valid_epoch_loss, epoch, model, optimizer, criterion)
+        save_best_model(valid_epoch_loss, epoch, model, optimizer, criterion, cfg)
         print('-'*50)
     # Save the trained model weights.
-    save_model(epochs, model, optimizer, criterion)
+    save_model(epochs, model, optimizer, criterion, cfg)
     # Save the loss and accuracy plots.
-    save_plots(train_acc, valid_acc, train_loss, valid_loss)
+    save_plots(train_acc, valid_acc, train_loss, valid_loss, cfg)
     print('TRAINING COMPLETE')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Argument for train the model")
-    parser.add_argument('-cfg', '--config', default="../Trainer/configs/effnetb0.yaml",
+    parser.add_argument('-cfg', '--config', default="/content/drive/Shareddrives/skripsi/VAR/vehicle-attribute-recognizer/Trainer/configs/effnetb0.yaml",
                         type=str, help="Path to config yaml file")
     args = parser.parse_args()
     cfg = read_cfg(cfg_file=args.config)
@@ -143,7 +144,6 @@ if __name__ == '__main__':
         model_name=cfg['model']['backbone'],
         **kwargs).to(device=device)
     LOG.info(f"Backbone {cfg['model']['backbone']} succesfully loaded.")
-    print(backbone)
 
     optimizer = get_optimizer(cfg, backbone)
     LOG.info(f"Optimizer has been defined.")
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     generate_model_config(cfg)
     LOG.info("Model config has been generated")
 
-    train(backbone, train_dl, val_dl, cfg['train']['num_epochs'])
+    train(backbone, train_dl, val_dl, cfg)
 
     best_model_path = os.path.join(cfg['output_dir'], 'best_model.pth')
     final_model_path = os.path.join(cfg['output_dir'], 'final_model.pth')

@@ -13,8 +13,7 @@ def create_model(model_name: str,
         model = models.densenet201(weights='IMAGENET1K_V1')
 
         model.classifier = nn.Linear(
-            in_features=1920,
-            out_features=num_classes
+          in_features=1920, out_features=num_classes
         )
 
     elif model_name == 'efficientnet_b0':
@@ -49,7 +48,8 @@ def create_model(model_name: str,
 
     elif model_name == 'shufflenetv2x2':
         model = models.shufflenet_v2_x2_0(weights='IMAGENET1K_V1')
-        model.fc = nn.Linear(in_features=2048, out_features=1000)
+        model.fc = nn.Linear(in_features=2048, 
+                            out_features=num_classes)
 
     else:
         raise NotImplementedError
