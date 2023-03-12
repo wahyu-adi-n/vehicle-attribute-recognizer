@@ -18,8 +18,8 @@ dataset:
   num_workers: 2
   
 model:
-  backbone: 'shufflenet_v2_x2' # name of backbone or network models
-  weights: 'IMAGENET1K_V1'
+  backbone: 'mobilenet_v3_l' # name of backbone or network models
+  weights: 'IMAGENET1K_V2'
   # pretrained: true # will be deprecated on torch 0.15
   input_size: [224, 224]
   num_classes: 196

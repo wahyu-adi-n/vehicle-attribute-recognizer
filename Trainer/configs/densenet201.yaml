@@ -18,7 +18,7 @@ dataset:
   num_workers: 2
   
 model:
-  backbone: 'densenet201' # name of backbone or network models
+  backbone: 'densenet_201' # name of backbone or network models
   weights: 'IMAGENET1K_V1'
   # pretrained: true # will be deprecated on torch 0.15
   input_size: [224, 224]
@@ -28,7 +28,8 @@ train:
   batch_size: 32 # num of batch size
   optimizer: 'adam'
   lr: 0.0001 # learning rate
-  num_epochs: 30 # num of epoch
+  num_epochs: 25 # num of epoch
+  weight_decay: 0.001
 
 val:
   batch_size: 32

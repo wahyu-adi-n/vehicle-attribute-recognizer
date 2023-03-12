@@ -18,7 +18,7 @@ dataset:
   num_workers: 2
   
 model:
-  backbone: 'shufflenet_v2_x2' # name of backbone or network models
+  backbone: 'efficientnet_b4' # name of backbone or network models
   weights: 'IMAGENET1K_V1'
   # pretrained: true # will be deprecated on torch 0.15
   input_size: [224, 224]

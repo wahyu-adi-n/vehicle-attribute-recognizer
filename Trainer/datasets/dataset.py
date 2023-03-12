@@ -15,6 +15,7 @@ class CarsDataModule(DataModuleBase):
         self.train_transforms = transforms.Compose([
             transforms.Resize(cfg['model']['input_size']),
             transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomVerticalFlip(p=0.5),
             transforms.RandomRotation(
                 degrees=cfg['dataset']['augmentation']['rotation_range']
             ),
@@ -52,7 +53,7 @@ class CarsDataModule(DataModuleBase):
             shuffle=True,
             num_workers=self.cfg['dataset']['num_workers']
         )
-        self.train_dl = DataLoader(self.train_set, pin_memory=True, **kwargs)
+        self.train_dl = DataLoader(self.train_set, pin_memory=True,  **kwargs)
         return self.train_dl
 
     def val_dataloader(self):
@@ -61,7 +62,7 @@ class CarsDataModule(DataModuleBase):
             shuffle=False,
             num_workers=self.cfg['dataset']['num_workers']
         )
-        self.val_dl = DataLoader(self.val_set,  pin_memory=True, **kwargs)
+        self.val_dl = DataLoader(self.val_set, pin_memory=True, **kwargs)
         return self.val_dl
 
     def test_dataloader(self):
@@ -70,7 +71,7 @@ class CarsDataModule(DataModuleBase):
             shuffle=False,
             num_workers=self.cfg['dataset']['num_workers']
         )
-        self.test_dl = DataLoader(self.test_set,  pin_memory=True, **kwargs)
+        self.test_dl = DataLoader(self.test_set, pin_memory=True, **kwargs)
         return self.test_dl
 
     def get_classes(self):

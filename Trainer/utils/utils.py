@@ -97,13 +97,21 @@ def get_device(cfg):
 def get_optimizer(cfg, backbone):
     optimizer = None
     if cfg['train']['optimizer'] == 'adam':
-        optimizer = optim.Adam(backbone.parameters(), lr=cfg['train']['lr'])
+        optimizer = optim.Adam(backbone.parameters(), 
+                              lr=cfg['train']['lr'], 
+                              weight_decay=cfg['train']['weight_decay'])
     elif cfg['train']['optimizer'] == 'adamw':
-        optimizer = optim.AdamW(backbone.parameters(), lr=cfg['train']['lr'])
+        optimizer = optim.AdamW(backbone.parameters(), 
+                              lr=cfg['train']['lr'])
+                              #weight_decay=cfg['train']['weight_decay'])
     elif cfg['train']['optimizer'] == 'sgd':
-        optimizer = optim.SGD(backbone.parameters(), lr=cfg['train']['lr'])
+        optimizer = optim.SGD(backbone.parameters(), 
+                              lr=cfg['train']['lr'])
+                              #weight_decay=cfg['train']['weight_decay'])
     elif cfg['train']['optimizer'] == 'rmsprop':
-        optimizer = optim.RMSprop(backbone.parameters(), lr=cfg['train']['lr'])
+        optimizer = optim.RMSprop(backbone.parameters(), 
+                              lr=cfg['train']['lr'])
+                              #weight_decay=cfg['train']['weight_decay'])
     else:
         raise NotImplementedError
     return optimizer
@@ -117,6 +125,7 @@ def generate_hyperparameters(train_cfg: dict):
         'batch_size': train_cfg.train.batch_size,
         'optimizer': train_cfg.train.optimizer,
         'learning_rate': train_cfg.train.lr,
+        'weight_decay': train_cfg.train.weight_decay,
         'epoch': train_cfg.train.num_epochs
     }
 

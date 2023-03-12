@@ -4,7 +4,8 @@ import os
 import torch.nn as nn
 from utils.metrics import ClassificationMetrics
 from comet_ml import Artifact, Experiment
-from utils.utils import generate_model_config, read_cfg, get_optimizer, get_device, generate_hyperparameters, save_model, save_plots, SaveBestModel
+from utils.utils import generate_model_config, read_cfg, get_optimizer, \
+  get_device, generate_hyperparameters, save_model, save_plots, SaveBestModel
 from datasets.dataset import CarsDataModule
 from tqdm.auto import tqdm
 from models.models import create_model
@@ -82,7 +83,7 @@ def validate_one_epoch(model, val_loader, criterion, device):
     return epoch_loss, epoch_acc
 
 
-def train(model, train_loader, valid_loader, cfg):
+def train(model, train_loader, valid_loader, optimizer, criterion, cfg):
     # Lists to keep track of losses and accuracies.
     train_loss, valid_loss = [], []
     train_acc, valid_acc = [], []
@@ -139,20 +140,20 @@ if __name__ == '__main__':
 
     # Load the model
     kwargs = dict(weights=cfg['model']['weights'],
-                  output_class=cfg['model']['num_classes'], fine_tune=True)
+                  output_class=cfg['model']['num_classes'], 
+                  fine_tune=True)
     backbone = create_model(
         model_name=cfg['model']['backbone'],
         **kwargs).to(device=device)
     LOG.info(f"Backbone {cfg['model']['backbone']} succesfully loaded.")
-
+    print(backbone)
     optimizer = get_optimizer(cfg, backbone)
     LOG.info(f"Optimizer has been defined.")
 
     # Total parameters and trainable parameters.
     total_params = sum(p.numel() for p in backbone.parameters())
     print(f"{total_params:,} total parameters.")
-    total_trainable_params = sum(p.numel()
-                                 for p in backbone.parameters() if p.requires_grad)
+    total_trainable_params = sum(p.numel() for p in backbone.parameters() if p.requires_grad)
     print(f"{total_trainable_params:,} training parameters.")
 
     # Loss function.
@@ -173,17 +174,18 @@ if __name__ == '__main__':
     generate_model_config(cfg)
     LOG.info("Model config has been generated")
 
-    train(backbone, train_dl, val_dl, cfg)
+    train(backbone, train_dl, val_dl, optimizer, criterion, cfg)
 
     best_model_path = os.path.join(cfg['output_dir'], 'best_model.pth')
     final_model_path = os.path.join(cfg['output_dir'], 'final_model.pth')
     model_cfg_path = os.path.join(cfg['output_dir'], 'model-config.yaml')
     acc_fig = os.path.join(cfg['output_dir'], 'acc_figure.png')
     loss_fig = os.path.join(cfg['output_dir'], 'loss_figure.png')
+    
     artifact.add(best_model_path)
     artifact.add(final_model_path)
     artifact.add(model_cfg_path)
     artifact.add(acc_fig)
     artifact.add(loss_fig)
+
     logger.log_artifact(artifact=artifact)
-    logger.log_metrics()
