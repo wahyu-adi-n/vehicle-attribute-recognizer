@@ -1,3 +1,4 @@
 Dataset/car_data/car_data/
 Trainer/configs
 __pycache__
+*.pth
