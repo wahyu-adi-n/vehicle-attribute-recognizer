@@ -19,21 +19,22 @@ class CarsDataModule(DataModuleBase):
                 degrees=cfg['dataset']['augmentation']['rotation_range']
             ),
             transforms.RandomAdjustSharpness(
-                sharpness_factor=cfg['dataset']['augmentation']['sharpness_factor'],
-                p=0.5),
+                sharpness_factor=cfg['dataset']['augmentation']['sharpness_factor'], p=0.5),
             transforms.RandomGrayscale(p=0.5),
             transforms.RandomPerspective(
                 distortion_scale=cfg['dataset']['augmentation']['distortion_scale'], p=0.5),
             transforms.RandomPosterize(
                 bits=cfg['dataset']['augmentation']['bits'], p=0.5),
             transforms.ToTensor(),
-            transforms.Normalize(cfg['dataset']['mean'], cfg['dataset']['std'])
+            transforms.Normalize(mean=cfg['dataset']['mean'],
+                                 std=cfg['dataset']['std'])
         ])
 
         self.test_val_transforms = transforms.Compose([
             transforms.Resize(cfg['model']['input_size']),
             transforms.ToTensor(),
-            transforms.Normalize(cfg['dataset']['mean'], cfg['dataset']['std'])
+            transforms.Normalize(mean=cfg['dataset']['mean'],
+                                 std=cfg['dataset']['std'])
         ])
         self.prepare_dataset()
 
@@ -44,7 +45,6 @@ class CarsDataModule(DataModuleBase):
                                    transform=self.test_val_transforms)
         self.test_set = ImageFolder(root=self.cfg['dataset']['test_dir'],
                                     transform=self.test_val_transforms)
-        # return self.train_set, self.val_set, self.test_set
 
     def train_dataloader(self):
         kwargs = dict(

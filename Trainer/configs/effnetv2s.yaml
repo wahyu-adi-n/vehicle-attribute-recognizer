@@ -1,16 +1,16 @@
-output_dir: "../Trainer/outputs/" # modify it
-device: 'cpu' # you can change this device to cpu or cuda:0
+output_dir: "/content/drive/Shareddrives/skripsi/VAR/vehicle-attribute-recognizer/Trainer/outputs/" # modify it
+device: 'cuda:0' # you can change this device to cpu or cuda:0
 dataset:
-  root_dir: '../Dataset/cars_dataset/' # modify it
+  root_dir: '/content/drive/Shareddrives/skripsi/VAR/vehicle-attribute-recognizer/Dataset/cars_dataset/' # modify it
   augmentation: # you can add any augmemtation parameters in here
-    rotation_range: 45
+    rotation_range: 30
     sharpness_factor: 2
     distortion_scale: 0.5
     bits: 2
   
-  train_dir: '../Dataset/cars_dataset/train/' # modify it
-  val_dir: '../Dataset/cars_dataset/test/' # modify it
-  test_dir: '../Dataset/cars_dataset/test/' # modify it
+  train_dir: '/content/drive/Shareddrives/skripsi/VAR/vehicle-attribute-recognizer/Dataset/car_data/car_data/train/' # modify it
+  val_dir: '/content/drive/Shareddrives/skripsi/VAR/vehicle-attribute-recognizer/Dataset/car_data/car_data/test/' # modify it
+  test_dir: '/content/drive/Shareddrives/skripsi/VAR/vehicle-attribute-recognizer/Dataset/car_data/car_data/test/' # modify it
   
   mean: [0.485, 0.456, 0.406] # from imagenet
   std: [0.229, 0.224, 0.225] # from imagenet
@@ -27,8 +27,9 @@ model:
 train:
   batch_size: 32 # num of batch size
   optimizer: 'adam'
-  lr: 0.0001 # learning rate
-  num_epochs: 20 # num of epoch
+  lr: 0.0001
+  num_epochs: 20
+  weight_decay: 0.001
 
 val:
   batch_size: 32

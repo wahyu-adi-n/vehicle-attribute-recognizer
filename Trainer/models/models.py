@@ -1,56 +1,69 @@
 import torch.nn as nn
 from torchvision import models
 
-
 def create_model(model_name: str,
-                fine_tune=True,
+                fine_tune=None,
                 num_classes=196,
-                 **kwargs):
+                **kwargs):
 
     model = None
 
-    if model_name == 'densenet201':
-        model = models.densenet201(weights='IMAGENET1K_V1')
+    # DenseNet
+    if model_name == 'densenet_201': # sudah
+        model = models.densenet201(weights=models.DenseNet201_Weights.DEFAULT)
+        model.name = 'densenet_201'
+        model.classifier = nn.Linear(model.classifier.in_features, out_features=num_classes)
+    
+    # EfficientNet V1
+    elif model_name == 'efficientnet_b1': # sudah
+        model = models.efficientnet_b1(weights=models.EfficientNet_B1_Weights.DEFAULT)
+        model.name = 'efficientnet_b1'
+        model.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
+    
+    elif model_name == 'efficientnet_b4': # sudah
+        model = models.efficientnet_b4(weights=models.EfficientNet_B4_Weights.DEFAULT)
+        model.name = 'efficientnet_b4'
+        model.classifier[1] = nn.Linear(in_features=1792, out_features=num_classes)
 
-        model.classifier = nn.Linear(
-            in_features=1920,
-            out_features=num_classes
-        )
+    # EfficientNet V2
+    elif model_name == 'efficientnet_v2_s': # sudah
+        model = models.efficientnet_v2_s(weights=models.EfficientNet_V2_S_Weights.DEFAULT)
+        model.name = 'efficientnet_v2_s'
+        model.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
+    
+    elif model_name == 'efficientnet_v2_m': # belum
+        model = models.efficientnet_v2_m(weights=models.EfficientNet_V2_M_Weights.DEFAULT)
+        model.name = 'efficientnet_v2_m'
+        model.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
+    
+    elif model_name == 'efficientnet_v2_l': # belum
+        model = models.efficientnet_v2_l(weights=models.EfficientNet_V2_L_Weights.DEFAULT)
+        model.name = 'efficientnet_v2_l'
+        model.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
 
-    elif model_name == 'efficientnet_b0':
-        model = models.efficientnet_b0(weights='IMAGENET1K_V1')
-        model.classifier[1] = nn.Linear(
-            in_features=1280, out_features=num_classes
-        )
-
-    elif model_name == 'efficientnet_b1':
-        model = models.efficientnet_b1(weights='IMAGENET1K_V2')
-        model.classifier[1] = nn.Linear(
-            in_features=1280, out_features=num_classes
-        )
-
-    elif model_name == 'efficientnet_v2_s':
-        model = models.efficientnet_v2_s(weights='IMAGENET1K_V1')
-        model.classifier[1] = nn.Linear(
-            in_features=1280, out_features=num_classes
-        )
-
-    elif model_name == 'inceptionv3':
-        model = models.inception_v3(weights='IMAGENET1K_V1')
-        model.fc = nn.Linear(
-            in_features=2048, out_features=num_classes
-        )
-
-    elif model_name == 'resnet50':
-        model = models.resnet50(weights='IMAGENET1K_V2')
-        model.fc = nn.Linear(
-            in_features=2048, out_features=num_classes
-        )
-
-    elif model_name == 'shufflenetv2x2':
-        model = models.shufflenet_v2_x2_0(weights='IMAGENET1K_V1')
-        model.fc = nn.Linear(in_features=2048, out_features=1000)
-
+    # ResNet
+    elif model_name == 'resnet_50': # sudah
+        model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+        model.name = 'resnet_50'
+        model.fc = nn.Linear(model.fc.in_features, out_features=num_classes)
+    
+    elif model_name == 'resnet_34': # sudah
+        model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
+        model.name = 'resnet_34'
+        model.fc = nn.Linear(model.fc.in_features, out_features=num_classes)
+    
+    # MobileNet
+    elif model_name == 'mobilenet_v3_l': # sudah
+        model = models.mobilenet_v3_large(weights=models.MobileNet_V3_Large_Weights.DEFAULT)
+        model.name = 'mobilenet_v3_l'
+        model.classifier[3] = nn.Linear(in_features=1280, out_features=num_classes)
+        
+    # ShuffleNet
+    elif model_name == 'shufflenet_v2_x2': # sudah
+        model = models.shufflenet_v2_x2_0(weights=models.ShuffleNet_V2_X2_0_Weights.DEFAULT)
+        model.name = 'shufflenet_v2_x2'
+        model.fc = nn.Linear(model.fc.in_features , out_features=num_classes)
+        
     else:
         raise NotImplementedError
 
