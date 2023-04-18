@@ -1,10 +1,9 @@
+from data.base import DataModuleBase
 from torchvision import datasets, transforms
-from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader
-from datasets.base import DataModuleBase
 
 
-class CarsDataModule(DataModuleBase):
+class CarsDataset(DataModuleBase):
     def __init__(self, cfg):
         super().__init__(cfg)
         self.cfg = cfg
@@ -37,38 +36,41 @@ class CarsDataModule(DataModuleBase):
         self.prepare_dataset()
 
     def prepare_dataset(self):
-        self.train_set = ImageFolder(root=self.cfg['dataset']['train_dir'],
+        self.train_set = datasets.ImageFolder(root=self.cfg['dataset']['train_dir'],
                                      transform=self.train_transforms)
-        self.val_set = ImageFolder(root=self.cfg['dataset']['val_dir'],
+        self.val_set = datasets.ImageFolder(root=self.cfg['dataset']['val_dir'],
                                    transform=self.test_val_transforms)
-        self.test_set = ImageFolder(root=self.cfg['dataset']['test_dir'],
+        self.test_set = datasets.ImageFolder(root=self.cfg['dataset']['test_dir'],
                                     transform=self.test_val_transforms)
 
     def train_dataloader(self):
         kwargs = dict(
             batch_size=self.train_bs,
             shuffle=True,
-            num_workers=self.cfg['dataset']['num_workers']
+            num_workers=self.cfg['dataset']['num_workers'],
+            pin_memory=True
         )
-        self.train_dl = DataLoader(self.train_set, pin_memory=True, **kwargs)
+        self.train_dl = DataLoader(self.train_set, **kwargs)
         return self.train_dl
 
     def val_dataloader(self):
         kwargs = dict(
             batch_size=self.val_bs,
             shuffle=False,
-            num_workers=self.cfg['dataset']['num_workers']
+            num_workers=self.cfg['dataset']['num_workers'], 
+            pin_memory=True
         )
-        self.val_dl = DataLoader(self.val_set,  pin_memory=True, **kwargs)
+        self.val_dl = DataLoader(self.val_set, **kwargs)
         return self.val_dl
 
     def test_dataloader(self):
         kwargs = dict(
             batch_size=self.test_bs,
             shuffle=False,
-            num_workers=self.cfg['dataset']['num_workers']
+            num_workers=self.cfg['dataset']['num_workers'],
+            pin_memory=True
         )
-        self.test_dl = DataLoader(self.test_set,  pin_memory=True, **kwargs)
+        self.test_dl = DataLoader(self.test_set, **kwargs)
         return self.test_dl
 
     def get_classes(self):

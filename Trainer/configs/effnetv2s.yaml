@@ -19,8 +19,6 @@ dataset:
   
 model:
   backbone: 'efficientnet_v2_s' # name of backbone or network models
-  weights: 'IMAGENET1K_V1'
-  # pretrained: true # will be deprecated on torch 0.15
   input_size: [224, 224]
   num_classes: 196
 

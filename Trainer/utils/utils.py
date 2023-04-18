@@ -1,19 +1,21 @@
-from easydict import EasyDict as edict
-from torch import optim
-from torch import device
 import os
 import yaml
 import torch
 import matplotlib
 import matplotlib.pyplot as plt
+
+from easydict import EasyDict as edict
+from torch import optim, device
+
 matplotlib.style.use('ggplot')
 
 class SaveBestModel:
     def __init__(self, best_valid_loss=float('inf')):
         self.best_valid_loss = best_valid_loss
 
-    def __call__(self, current_valid_loss, epoch, model, optimizer, criterion, cfg):
+    def __call__(self, model, optimizer, criterion, current_valid_loss, epoch, cfg):
         save_dir = cfg['output_dir'] + cfg['model']['backbone']
+
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -21,6 +23,7 @@ class SaveBestModel:
             self.best_valid_loss = current_valid_loss
             print(f"\nBest validation loss: {self.best_valid_loss}")
             print(f"\nSaving best model for epoch: {epoch}\n")
+            
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -29,20 +32,34 @@ class SaveBestModel:
             }, os.path.join(save_dir, f'best_model_{cfg.model.backbone}.pth'))
 
 
-def save_model(epochs, model, optimizer, criterion, cfg):
+def save_model(model: torch.nn.Module, 
+                optimizer: torch.optim.Optimizer, 
+                criterion: torch.nn.Module, 
+                epoch: int,
+                cfg):
+
     save_dir = cfg['output_dir'] + cfg['model']['backbone']
+    
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    torch.save({
-        'epoch': epochs,
+    torch.save(
+      {
+        'epoch': epoch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'loss': criterion,
-    }, os.path.join(save_dir, f'final_model_{cfg.model.backbone}.pth'))
+      }, 
+    os.path.join(save_dir, f'final_model_{cfg.model.backbone}.pth'))
 
 
-def save_plots(train_acc, valid_acc, train_loss, valid_loss, cfg):
+
+def save_plots(train_loss: list, 
+              train_acc: list, 
+              valid_loss: list,
+              valid_acc: list, 
+              cfg):
+
     save_dir = cfg['output_dir'] + cfg['model']['backbone']
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -72,6 +89,12 @@ def read_cfg(cfg_file):
         cfg = edict(yaml.safe_load(rf))
         return cfg
 
+def set_seeds(seed: int=42):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
+    
 def get_device(cfg):
     result_device = None
     if cfg['device'] == 'cpu':
@@ -136,3 +159,10 @@ def generate_model_config(train_cfg: dict):
     with open(save_path, "w") as yaml_file:
         yaml.safe_dump(model_config, yaml_file, sort_keys=False,
                        explicit_start=True, default_flow_style=None)
+
+def print_train_time(start, end, device=None):
+    total_time = end - start
+    print(f"\nTrain time on {device}: {total_time:.3f} seconds")
+    return total_time
+  
+

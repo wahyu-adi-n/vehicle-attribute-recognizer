@@ -1,5 +1,5 @@
-from sklearn.metrics import precision_score, f1_score, recall_score, accuracy_score
-import torch
+from sklearn.metrics import precision_score, f1_score, \
+                            recall_score, accuracy_score
 
 class ClassificationMetrics:
     def __init__(self):

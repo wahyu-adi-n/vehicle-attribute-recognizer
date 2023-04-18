@@ -3,7 +3,7 @@ import logging.config
 import yaml
 
 try:
-    with open('../Trainer/configs/logging_config.yaml', 'r') as f:
+    with open('/configs/logging_config.yaml', 'r') as f:
         conf = yaml.safe_load(f.read())
         logging.config.dictConfig(conf)
         logging.captureWarnings(True)

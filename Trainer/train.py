@@ -1,182 +1,173 @@
-from comet_ml import Artifact, Experiment
-from utils.utils import generate_model_config, read_cfg, get_optimizer, \
-      get_device, generate_hyperparameters, save_model, save_plots, SaveBestModel
-from datasets.dataset import CarsDataModule
-from tqdm.auto import tqdm
-from models.models import create_model
-from utils.logger import get_logger
-from utils.metrics import ClassificationMetrics
 import os
 import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torchinfo import summary
+from comet_ml import Artifact, Experiment
+from utils.utils import generate_model_config, read_cfg, get_optimizer, \
+      get_device, generate_hyperparameters, save_model, save_plots, SaveBestModel, \
+      set_seeds, print_train_time
+from data.dataset import CarsDataset
+from tqdm.auto import tqdm
+from models.models import create_model
+from utils.logger import get_logger
+from utils.metrics import ClassificationMetrics
 
-seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed(seed)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = True
+def train_one_epoch(model: torch.nn.Module, 
+                    train_loader: torch.utils.data.DataLoader,
+                    optimizer: torch.optim.Optimizer, 
+                    criterion: torch.nn.Module,
+                    device: torch.device,
+                    epoch: int):
 
-def train_one_epoch(model, 
-                    train_loader,
-                    optimizer, 
-                    criterion, 
-                    device,
-                    epoch):
-    
-    print('Training process...')
-    train_running_loss = 0.0
-    train_running_correct = 0.0
+    train_loss, train_acc = 0.0, 0.0
 
-    # set the model to train mode initially
     model.train()
-    for i, data in tqdm(enumerate(train_loader), total=len(train_loader)):
 
-        # get the inputs and assign them to cuda
-        image, labels = data
-        image = image.to(device)
-        labels = labels.to(device)
-        optimizer.zero_grad()
+    for batch, (X, y) in tqdm(enumerate(train_loader), 
+                        total=len(train_loader)):
 
-        # Forward pass + backward + optimize
+        image, labels = X.to(device), y.to(device)
+
         outputs = model(image)
 
-        # Calculate the loss.
         loss = criterion(outputs, labels)
-        
-        # Calculate the accuracy.
-        _, preds = torch.max(outputs.data, 1)
 
-        # Calculate the loss/acc later
-        train_running_loss += loss.item()
-        train_running_correct += (preds == labels).sum().item()
+        train_loss += loss.item()
 
-        # Backpropagation.
+        optimizer.zero_grad()
+
         loss.backward()
 
-        # Update the weights.
         optimizer.step()
 
-    # Loss and accuracy for the complete epoch.
-    epoch_loss = train_running_loss / len(train_loader)
-    epoch_acc = 100.0 * (train_running_correct / len(train_loader.dataset))
-    
+        y_pred_labels = torch.argmax(torch.softmax(outputs, dim=1), dim=1)
+        train_acc += (y_pred_labels == labels).sum().item()/len(outputs)
+
+    train_loss /=  len(train_loader)
+    train_acc /= len(train_loader)
+
     # Log metric for train loss and accuracy
-    logger.log_metric("train_loss", epoch_loss, epoch=epoch)
-    logger.log_metric("train_accuracy", epoch_acc, epoch=epoch)
+    logger.log_metric("train_loss", train_loss, epoch=epoch)
+    logger.log_metric("train_acc", train_acc, epoch=epoch)
 
-    return epoch_loss, epoch_acc
+    return train_loss, train_acc
 
 
-def validate_one_epoch(model, 
-                      val_loader, 
-                      criterion, 
-                      device,
-                      epoch):
-    
-    print('Validation process...')
+def validate_one_epoch(model: torch.nn.Module, 
+                      val_loader: torch.utils.data.DataLoader, 
+                      criterion: torch.nn.Module, 
+                      device: torch.device,
+                      epoch: int):
 
-    valid_running_loss = 0.0
-    valid_running_correct = 0.0
-
-    accuracy = precision = recall = f1 = 0.0
+    val_loss, val_acc = 0.0, 0.0
+    accuracy, precision, recall, f1_score = 0.0, 0.0, 0.0, 0.0
     eval_metrics = ClassificationMetrics()
 
     model.eval()
-    with torch.no_grad():
-        for i, data in tqdm(enumerate(val_loader), total=len(val_loader)):
-            image, labels = data
-            image = image.to(device)
-            labels = labels.to(device)
 
-            # Forward pass.
+    with torch.no_grad():
+
+        for batch, (X, y) in tqdm(enumerate(val_loader), 
+                                  total=len(val_loader)):
+
+            image, labels = X.to(device), y.to(device)
+
             outputs = model(image)
                         
-            # Calculate the loss.
             loss = criterion(outputs, labels)
+            val_loss += loss.item()
 
-            # Calculate the accuracy.
-            _, preds = torch.max(outputs.data, 1)
+            val_pred_labels = outputs.argmax(dim=1)
+            val_acc += ((val_pred_labels == labels).sum().item()/len(val_pred_labels))
 
-            valid_running_loss += loss.item()
-            valid_running_correct += (preds == labels).sum().item()
 
-            classification_metrics = eval_metrics(labels.cpu(), preds.cpu())
+            classification_metrics = eval_metrics(labels.cpu(), 
+                                                  val_pred_labels.cpu())
             
             accuracy += classification_metrics['accuracy']
             precision += classification_metrics['precision']
             recall += classification_metrics['recall']
-            f1 += classification_metrics['f1_score']
-        
-        total_val_dataset = len(val_loader)
+            f1_score += classification_metrics['f1_score']
 
-        epoch_accuracy = accuracy / total_val_dataset
-        epoch_precision = precision / total_val_dataset
-        epoch_recall = recall / total_val_dataset
-        epoch_f1_score = f1 / total_val_dataset
+        accuracy /= len(val_loader)
+        precision /= len(val_loader)
+        recall /= len(val_loader)
+        f1_score /= len(val_loader)
 
-    # Loss and accuracy for the complete epoch.
-    epoch_loss = valid_running_loss / len(val_loader)
-    epoch_acc = 100.0 * (valid_running_correct / len(val_loader.dataset))
+    val_loss /= len(val_loader)
+    val_acc /= len(val_loader)
+
     
     # Log metric for val loss and accuracy
-    logger.log_metric("val_loss", epoch_loss, epoch=epoch)
-    logger.log_metric("val_accuracy", epoch_acc, epoch=epoch)
-    logger.log_metric("accuracy", epoch_accuracy, epoch=epoch)
-    logger.log_metric("precision", epoch_precision, epoch=epoch)
-    logger.log_metric("recall", epoch_recall, epoch=epoch)
-    logger.log_metric("f1_score", epoch_f1_score, epoch=epoch)
+    logger.log_metric("val_loss", val_loss, epoch=epoch)
+    logger.log_metric("val_accuracy", val_acc, epoch=epoch)
+    logger.log_metric("accuracy", accuracy, epoch=epoch)
+    logger.log_metric("precision", precision, epoch=epoch)
+    logger.log_metric("recall", recall, epoch=epoch)
+    logger.log_metric("f1_score", f1_score, epoch=epoch)
     
-    return epoch_loss, epoch_acc, epoch_accuracy, \
-           epoch_precision, epoch_recall, epoch_f1_score
+    return val_loss, val_acc
 
-def train(model, 
-          train_loader, 
-          val_loader, 
-          optimizer,  
-          criterion, 
-          device, 
+def train(model: torch.nn.Module, 
+          train_loader: torch.utils.data.DataLoader, 
+          val_loader: torch.utils.data.DataLoader,  
+          optimizer: torch.optim.Optimizer,  
+          criterion: torch.nn.Module, 
+          device: torch.device, 
           cfg):
 
-    # Lists to keep track of losses and accuracies.
-    train_loss, valid_loss = [], []
-    train_acc, valid_acc = [], []
+    results = {"train_loss": [],
+               "train_acc": [],
+               "val_loss": [],
+               "val_acc": []
+    }
 
-    # Start the training.
     epochs = cfg['train']['num_epochs'] 
+    
+    model.to(device)
 
-    for epoch in range(1, epochs+1):
+    for epoch in tqdm(range(1, epochs+1)):
         print(f"[INFO]: Epoch {epoch} of {epochs}")
-        train_epoch_loss, train_epoch_acc = train_one_epoch(
-            model, train_loader, optimizer, criterion, device, epoch)
+        train_loss, train_acc = train_one_epoch(model,
+                                                train_loader, 
+                                                optimizer, 
+                                                criterion, 
+                                                device, 
+                                                epoch)
 
-        # switch the model to eval mode to evaluate on test data
-        valid_epoch_loss, valid_epoch_acc,_,_,_,_ = validate_one_epoch(
-            model, val_loader, criterion, device, epoch)
-        
-        train_loss.append(train_epoch_loss)
-        valid_loss.append(valid_epoch_loss)
-        train_acc.append(train_epoch_acc)
-        valid_acc.append(valid_epoch_acc)
+        val_loss, val_acc = validate_one_epoch(model, 
+                                              val_loader, 
+                                              criterion, 
+                                              device, 
+                                              epoch)
 
-        print(f"loss: {train_epoch_loss:.3f}, accuracy: {train_epoch_acc:.3f}")
-        print(f"val loss: {valid_epoch_loss:.3f}, val accuracy: {valid_epoch_acc:.3f}")
+        print(
+          f"Epoch: {epoch} | "
+          f"train_loss: {train_loss:.4f} | "
+          f"train_acc: {train_acc:.4f} | "
+          f"test_loss: {val_loss:.4f} | "
+          f"test_acc: {val_acc:.4f}"
+        )
 
-        # save the best model till now if we have the least loss in the current epoch
-        save_best_model(valid_epoch_loss, epoch, model, optimizer, criterion, cfg)
-        print('-'*50)
+        results['train_loss'].append(train_loss)
+        results['train_acc'].append(train_acc)
+        results['val_loss'].append(val_loss)
+        results['val_acc'].append(val_acc)
 
-    # Save the trained model weights.
-    save_model(epochs, model, optimizer, criterion, cfg)
+        save_best_model(model, optimizer, criterion, val_loss, epoch, cfg)
 
-    # Save the loss and accuracy plots.
-    save_plots(train_acc, valid_acc, train_loss, valid_loss, cfg)
+    save_model(model, optimizer, criterion, epoch, cfg)
+
+    save_plots(results['train_loss'], 
+                results['train_acc'], 
+                results['val_loss'], 
+                results['val_acc'], cfg)
     
     print('TRAINING COMPLETE')
 
-    return model, train_loss, train_acc, valid_loss, valid_acc
-
+    return results, model 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Argument for train the model")
@@ -202,22 +193,27 @@ if __name__ == '__main__':
     LOG.info(f"{str(device)} has choosen.")
 
     print(f"\nComputation device: {device} ({torch.cuda.get_device_name(device)})")
-    print(f"Epoch: {cfg['train']['num_epochs']}")
+    print(f"Epochs: {cfg['train']['num_epochs']}")
     print(f"Learning Rate: {cfg['train']['lr']}")
     print(f"Optimizer: {cfg['train']['optimizer']}")
     print(f"Weight Decay: {cfg['train']['weight_decay']}")
     print(f"Batch Size: {cfg['train']['batch_size']}\n")
 
-    # Load the model
-    kwargs = dict(weights=cfg['model']['weights'],
-                  output_class=cfg['model']['num_classes'], 
-                  fine_tune=True)
 
-    backbone = create_model(model_name=cfg['model']['backbone'],
-                            **kwargs).to(device=device)
+    backbone, backbone_transform = create_model(model_name = cfg['model']['backbone'], 
+                                                fine_tune = False).to(device=device)
+    
+    print(f"{backbone.__class__.__name__} Model Summary") 
+
+    summary(model=backbone, 
+        input_size=(32, 3, 224, 224),
+        # col_names=["input_size"], # uncomment for smaller output
+        col_names=["input_size", "output_size", "num_params", "trainable"],
+        col_width=20,
+        row_settings=["var_names"]
+    )
         
     LOG.info(f"Backbone {cfg['model']['backbone']} succesfully loaded.")
-    print(backbone)
 
     optimizer = get_optimizer(cfg, backbone)
     LOG.info(f"Optimizer has been defined.")
@@ -229,13 +225,13 @@ if __name__ == '__main__':
     print(f"{total_trainable_params:,} training parameters.")
 
     # Loss function.
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     LOG.info(f"Criterion has been defined")
 
     # initialize SaveBestModel class
     save_best_model = SaveBestModel()
 
-    dataset = CarsDataModule(cfg)
+    dataset = CarsDataset(cfg)
     train_dl = dataset.train_dataloader()
     val_dl = dataset.val_dataloader()
     test_dl = dataset.test_dataloader()
@@ -247,6 +243,8 @@ if __name__ == '__main__':
     generate_model_config(cfg)
     LOG.info("Model config has been generated")
 
+    set_seeds()
+    
     train(model = backbone, 
           train_loader = train_dl, 
           val_loader = val_dl,
