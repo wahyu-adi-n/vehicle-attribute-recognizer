@@ -18,35 +18,21 @@ class CarsDataModule(DataModuleBase):
             transforms.RandomRotation(
                 degrees=cfg['dataset']['augmentation']['rotation_range']
             ),
-<<<<<<< HEAD
-            transforms.RandomAdjustSharpness(sharpness_factor=cfg['dataset']['augmentation']['sharpness_factor'], p=0.5),
-=======
             transforms.RandomAdjustSharpness(
                 sharpness_factor=cfg['dataset']['augmentation']['sharpness_factor'], p=0.5),
->>>>>>> affbe6b861c71ed26eb4cf525a74223de6d59c5f
             transforms.RandomGrayscale(p=0.5),
             transforms.RandomPerspective(distortion_scale=cfg['dataset']['augmentation']['distortion_scale'], p=0.5),
             transforms.RandomPosterize(bits=cfg['dataset']['augmentation']['bits'], p=0.5),
             transforms.ToTensor(),
-<<<<<<< HEAD
-            transforms.Normalize(mean=cfg['dataset']['mean'], 
-                                std=cfg['dataset']['std'])
-=======
             transforms.Normalize(mean=cfg['dataset']['mean'],
                                  std=cfg['dataset']['std'])
->>>>>>> affbe6b861c71ed26eb4cf525a74223de6d59c5f
         ])
 
         self.test_val_transforms = transforms.Compose([
             transforms.Resize(cfg['model']['input_size']),
             transforms.ToTensor(),
-<<<<<<< HEAD
-            transforms.Normalize(mean=cfg['dataset']['mean'], 
-                                std=cfg['dataset']['std'])
-=======
             transforms.Normalize(mean=cfg['dataset']['mean'],
                                  std=cfg['dataset']['std'])
->>>>>>> affbe6b861c71ed26eb4cf525a74223de6d59c5f
         ])
         self.prepare_dataset()
 

@@ -235,10 +235,10 @@ if __name__ == '__main__':
     # initialize SaveBestModel class
     save_best_model = SaveBestModel()
 
-    CarsData = CarsDataModule(cfg)
-    train_dl = CarsData.train_dataloader()
-    val_dl = CarsData.val_dataloader()
-    test_dl = CarsData.test_dataloader()
+    dataset = CarsDataModule(cfg)
+    train_dl = dataset.train_dataloader()
+    val_dl = dataset.val_dataloader()
+    test_dl = dataset.test_dataloader()
     LOG.info(f"Dataset train, val, and test data loader successfully loaded.")
 
     logger.log_parameters(hyperparameters)
