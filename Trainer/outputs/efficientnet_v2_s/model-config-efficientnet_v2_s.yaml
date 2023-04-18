@@ -1,0 +1,1 @@
+--- {model: efficientnet_v2_s, model_input: 224, output_class: 196, model_file: best_model_efficientnet_v2_s.pth}
