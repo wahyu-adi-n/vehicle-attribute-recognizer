@@ -20,6 +20,7 @@ def train_one_epoch(model: torch.nn.Module,
                     criterion: torch.nn.Module,
                     device: torch.device,
                     epoch: int):
+    print('[1] Training process...')
 
     train_loss, train_acc = 0.0, 0.0
 
@@ -60,6 +61,8 @@ def validate_one_epoch(model: torch.nn.Module,
                       criterion: torch.nn.Module, 
                       device: torch.device,
                       epoch: int):
+    
+    print('[2] Validation process...')
 
     val_loss, val_acc = 0.0, 0.0
     accuracy, precision, recall, f1_score = 0.0, 0.0, 0.0, 0.0
@@ -128,7 +131,7 @@ def train(model: torch.nn.Module,
     
     model.to(device)
 
-    for epoch in tqdm(range(1, epochs+1)):
+    for epoch in range(1, epochs+1):
         print(f"[INFO]: Epoch {epoch} of {epochs}")
         train_loss, train_acc = train_one_epoch(model,
                                                 train_loader, 
@@ -145,10 +148,10 @@ def train(model: torch.nn.Module,
 
         print(
           f"Epoch: {epoch} | "
-          f"train_loss: {train_loss:.4f} | "
-          f"train_acc: {train_acc:.4f} | "
-          f"test_loss: {val_loss:.4f} | "
-          f"test_acc: {val_acc:.4f}"
+          f"Train Loss: {train_loss:.4f} | "
+          f"Train Acc: {train_acc:.4f} | "
+          f"Val Loss: {val_loss:.4f} | "
+          f"Val Acc: {val_acc:.4f}"
         )
 
         results['train_loss'].append(train_loss)
@@ -201,7 +204,8 @@ if __name__ == '__main__':
 
 
     backbone, backbone_transform = create_model(model_name = cfg['model']['backbone'], 
-                                                fine_tune = False).to(device=device)
+                                                fine_tune = True)
+    backbone.to(device)
     
     print(f"{backbone.__class__.__name__} Model Summary") 
 
@@ -225,7 +229,7 @@ if __name__ == '__main__':
     print(f"{total_trainable_params:,} training parameters.")
 
     # Loss function.
-    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+    criterion = nn.CrossEntropyLoss()
     LOG.info(f"Criterion has been defined")
 
     # initialize SaveBestModel class

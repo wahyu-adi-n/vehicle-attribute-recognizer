@@ -12,7 +12,8 @@ class CarsDataset(DataModuleBase):
         self.test_bs = cfg['test']['batch_size']
 
         self.train_transforms = transforms.Compose([
-            transforms.Resize(cfg['model']['input_size']),
+            transforms.CenterCrop(size=cfg['model']['crop_size']),
+            transforms.Resize(size=cfg['model']['resize_size']),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomRotation(
                 degrees=cfg['dataset']['augmentation']['rotation_range']
@@ -28,7 +29,8 @@ class CarsDataset(DataModuleBase):
         ])
 
         self.test_val_transforms = transforms.Compose([
-            transforms.Resize(cfg['model']['input_size']),
+            transforms.CenterCrop(size=cfg['model']['crop_size']),
+            transforms.Resize(size=cfg['model']['resize_size']),
             transforms.ToTensor(),
             transforms.Normalize(mean=cfg['dataset']['mean'],
                                  std=cfg['dataset']['std'])
