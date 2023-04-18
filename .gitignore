@@ -1,6 +1,5 @@
 /Trainer/outputs/
 Dataset/
-/Dataset/car_data/car_data/
 __pycache__
 stanford-car-dataset-by-classes-folder.zip
 *.pth
