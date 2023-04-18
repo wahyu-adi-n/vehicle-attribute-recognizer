@@ -15,26 +15,23 @@ class CarsDataModule(DataModuleBase):
         self.train_transforms = transforms.Compose([
             transforms.Resize(cfg['model']['input_size']),
             transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomVerticalFlip(p=0.5),
             transforms.RandomRotation(
                 degrees=cfg['dataset']['augmentation']['rotation_range']
             ),
-            transforms.RandomAdjustSharpness(
-                sharpness_factor=cfg['dataset']['augmentation']['sharpness_factor'],
-                p=0.5),
+            transforms.RandomAdjustSharpness(sharpness_factor=cfg['dataset']['augmentation']['sharpness_factor'], p=0.5),
             transforms.RandomGrayscale(p=0.5),
-            transforms.RandomPerspective(
-                distortion_scale=cfg['dataset']['augmentation']['distortion_scale'], p=0.5),
-            transforms.RandomPosterize(
-                bits=cfg['dataset']['augmentation']['bits'], p=0.5),
+            transforms.RandomPerspective(distortion_scale=cfg['dataset']['augmentation']['distortion_scale'], p=0.5),
+            transforms.RandomPosterize(bits=cfg['dataset']['augmentation']['bits'], p=0.5),
             transforms.ToTensor(),
-            transforms.Normalize(cfg['dataset']['mean'], cfg['dataset']['std'])
+            transforms.Normalize(mean=cfg['dataset']['mean'], 
+                                std=cfg['dataset']['std'])
         ])
 
         self.test_val_transforms = transforms.Compose([
             transforms.Resize(cfg['model']['input_size']),
             transforms.ToTensor(),
-            transforms.Normalize(cfg['dataset']['mean'], cfg['dataset']['std'])
+            transforms.Normalize(mean=cfg['dataset']['mean'], 
+                                std=cfg['dataset']['std'])
         ])
         self.prepare_dataset()
 
@@ -45,7 +42,6 @@ class CarsDataModule(DataModuleBase):
                                    transform=self.test_val_transforms)
         self.test_set = ImageFolder(root=self.cfg['dataset']['test_dir'],
                                     transform=self.test_val_transforms)
-        # return self.train_set, self.val_set, self.test_set
 
     def train_dataloader(self):
         kwargs = dict(
@@ -53,7 +49,7 @@ class CarsDataModule(DataModuleBase):
             shuffle=True,
             num_workers=self.cfg['dataset']['num_workers']
         )
-        self.train_dl = DataLoader(self.train_set, pin_memory=True,  **kwargs)
+        self.train_dl = DataLoader(self.train_set, pin_memory=True, **kwargs)
         return self.train_dl
 
     def val_dataloader(self):
@@ -62,7 +58,7 @@ class CarsDataModule(DataModuleBase):
             shuffle=False,
             num_workers=self.cfg['dataset']['num_workers']
         )
-        self.val_dl = DataLoader(self.val_set, pin_memory=True, **kwargs)
+        self.val_dl = DataLoader(self.val_set,  pin_memory=True, **kwargs)
         return self.val_dl
 
     def test_dataloader(self):
@@ -71,7 +67,7 @@ class CarsDataModule(DataModuleBase):
             shuffle=False,
             num_workers=self.cfg['dataset']['num_workers']
         )
-        self.test_dl = DataLoader(self.test_set, pin_memory=True, **kwargs)
+        self.test_dl = DataLoader(self.test_set,  pin_memory=True, **kwargs)
         return self.test_dl
 
     def get_classes(self):

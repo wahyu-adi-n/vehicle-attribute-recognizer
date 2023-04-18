@@ -18,8 +18,8 @@ dataset:
   num_workers: 2
   
 model:
-  backbone: 'efficientnet_b4' # name of backbone or network models
-  weights: 'IMAGENET1K_V1'
+  backbone: 'resnet_34' # name of backbone or network models
+  weights: 'IMAGENET1K_V2'
   # pretrained: true # will be deprecated on torch 0.15
   input_size: [224, 224]
   num_classes: 196
@@ -30,7 +30,7 @@ train:
   lr: 0.0001
   num_epochs: 20
   weight_decay: 0.001
-
+  
 val:
   batch_size: 32
 
