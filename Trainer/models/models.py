@@ -76,6 +76,16 @@ def create_model(model_name: str,
         model.name = 'shufflenet_v2_x2'
         model.fc = nn.Linear(in_features=model.fc.in_features , 
                             out_features=num_classes)
+    
+    elif model_name == 'vit_b_16': # sudah
+        weights = models.ViT_B_16_Weights.DEFAULT
+        model_transform = weights.transforms()
+        model = models.vit_b_16(weights=weights)
+        model.name = 'vit_b_16'
+        model.heads = nn.Sequential(
+                          nn.Linear(in_features=768, 
+                            out_features=num_classes)
+                      )
     else:
         raise NotImplementedError
 
