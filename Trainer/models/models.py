@@ -1,5 +1,6 @@
 import torch.nn as nn
 from torchvision import models
+from .ensemble_model import EnsembleModel
 
 def create_model(model_name: str,
                 fine_tune: bool,
@@ -86,6 +87,15 @@ def create_model(model_name: str,
                           nn.Linear(in_features=768, 
                             out_features=num_classes)
                       )
+    
+    elif model_name == 'ensemble_r_d_e': # resnet, densenet, effnet
+        modelA = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+        modelB = models.densenet201(weights=models.DenseNet201_Weights.DEFAULT)
+        modelC =  model = models.efficientnet_v2_s(weights=models.EfficientNet_V2_S_Weights.DEFAULT)
+        model_transform = None
+        model.name = 'ensemble_r_d_e'
+        model = EnsembleModel(modelA, modelB, modelC)
+    
     else:
         raise NotImplementedError
 
