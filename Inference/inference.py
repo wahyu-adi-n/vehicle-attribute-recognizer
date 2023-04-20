@@ -2,11 +2,9 @@ from easydict import EasyDict as edict
 from module.class_names import class_names
 from torchvision import transforms
 from torch.nn import functional as F
-from torch import topk
-from PIL import Image
 from module.models import create_model
 from module.utils import metrics_report_to_df, save_plot_cm, prec_score, \
-                        recc_score, acc_score, fone_score, classification_reports
+                        recc_score, acc_score, fone_score, classification_reports, set_seeds
 
 import os
 import time
@@ -16,14 +14,6 @@ import yaml
 import glob as glob
 import cv2
 import argparse
-
-seed = 42
-np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed(seed)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = True
-
 
 def transform(image):
     transformation = transforms.Compose([
@@ -36,6 +26,7 @@ def transform(image):
     return transformation(image)
 
 def main(args):
+    init = set_seeds()
     device = torch.device('cuda:0') if torch.cuda.is_available() \
               else torch.device('cpu')
     print(f"Computation device: {device}")

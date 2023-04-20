@@ -1,14 +1,20 @@
 from sklearn.metrics import classification_report, precision_recall_fscore_support, \
     precision_score, f1_score, recall_score, accuracy_score, \
-    confusion_matrix, ConfusionMatrixDisplay
+    confusion_matrix
 from module.class_names import class_names
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from pylab import savefig
+import torch
 
-
+def set_seeds(seed:int = 42):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
+    
 def label_encoding(class_names):
     return {key: i for i, key in enumerate(class_names)}
 
