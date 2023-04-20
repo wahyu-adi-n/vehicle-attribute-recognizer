@@ -1,5 +1,4 @@
 Dataset/
 __pycache__
-Trainer/configs
 Trainer/outputs
 *.pth
