@@ -24,7 +24,8 @@ class CarsDataset(DataModuleBase):
             transforms.RandomPosterize(bits=cfg['dataset']['augmentation']['bits'], p=0.5),
             transforms.ToTensor(),
             transforms.Normalize(mean=cfg['dataset']['mean'],
-                                 std=cfg['dataset']['std'])
+                                 std=cfg['dataset']['std']),
+            transforms.RandomErasing(p=0.1),
         ])
 
         self.test_val_transforms = transforms.Compose([
