@@ -1,6 +1,9 @@
 import torch.nn as nn
 from torchvision import models
-from .ensemble_model import EnsembleModel
+from .ensemble_densenet_efficientnet import EnsembleDenseEfficientNet
+from .ensemble_resnet_densenet import EnsembleResDenseNet
+from .ensemble_resnet_efficientnet import EnsembleResEfficientNet
+from .ensemble_resnet_densenet_efficientnet import EnsembleResDenseEfficientNet
 
 def create_model(model_name: str,
                 fine_tune: bool,
@@ -42,6 +45,14 @@ def create_model(model_name: str,
         model.name = 'efficientnet_v2_s'
         model.classifier[1] = nn.Linear(in_features=1280, 
                                         out_features=num_classes)
+    
+    elif model_name == 'efficientnet_v2_m': # belum
+        weights = models.EfficientNet_V2_M_Weights.DEFAULT
+        model_transform = weights.transforms()
+        model = models.efficientnet_v2_m(weights=weights)
+        model.name = 'efficientnet_v2_m'
+        model.classifier[1] = nn.Linear(in_features=1280, 
+                                        out_features=num_classes)
 
     # ResNet
     elif model_name == 'resnet_50': # sudah
@@ -77,24 +88,53 @@ def create_model(model_name: str,
         model.name = 'shufflenet_v2_x2'
         model.fc = nn.Linear(in_features=model.fc.in_features , 
                             out_features=num_classes)
-    
-    elif model_name == 'vit_b_16': # sudah
-        weights = models.ViT_B_16_Weights.DEFAULT
-        model_transform = weights.transforms()
-        model = models.vit_b_16(weights=weights)
-        model.name = 'vit_b_16'
-        model.heads = nn.Sequential(
-                          nn.Linear(in_features=768, 
-                            out_features=num_classes)
-                      )
-    
-    elif model_name == 'ensemble_r_d_e': # resnet, densenet, effnet
-        modelA = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-        modelB = models.densenet201(weights=models.DenseNet201_Weights.DEFAULT)
-        modelC =  model = models.efficientnet_v2_s(weights=models.EfficientNet_V2_S_Weights.DEFAULT)
+
+    elif model_name == 'ensemble_densenet_efficientnet': # sudah
         model_transform = None
-        model.name = 'ensemble_r_d_e'
-        model = EnsembleModel(modelA, modelB, modelC)
+        dense_weights = models.DenseNet201_Weights.DEFAULT
+        efficient_weights = models.EfficientNet_V2_S_Weights.DEFAULT
+        dense_model = models.densenet201(weights=dense_weights)
+        efficient_model = models.efficientnet_v2_s(weights=efficient_weights)
+        dense_model.classifier = nn.Linear(in_features=1920, out_features=num_classes)
+        efficient_model.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
+        model = EnsembleDenseEfficientNet(dense_model, efficient_model, 392)
+        model.name = 'ensemble_densenet_efficientnet'
+    
+    elif model_name == 'ensemble_resnet_densenet': # sudah
+        model_transform = None
+        res_weights = models.ResNet50_Weights.DEFAULT
+        dense_weights = models.DenseNet201_Weights.DEFAULT
+        res_model = models.resnet50(weights=res_weights)
+        dense_model = models.densenet201(weights=dense_weights)
+        res_model.fc = nn.Linear(in_features=2048, out_features=num_classes)
+        dense_model.classifier = nn.Linear(in_features=1920, out_features=num_classes)
+        model = EnsembleResDenseNet(res_model, dense_model, 392)
+        model.name = 'ensemble_resnet_densenet'
+    
+    elif model_name == 'ensemble_resnet_efficientnet': # belum
+        model_transform = None
+        res_weights = models.ResNet50_Weights.DEFAULT
+        efficient_weights = models.EfficientNet_V2_S_Weights.DEFAULT
+        res_model = models.resnet50(weights=res_weights)
+        efficient_model = models.efficientnet_v2_s(weights=efficient_weights)
+        res_model.fc = nn.Linear(in_features=2048, out_features=num_classes)
+        efficient_model.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
+        model = EnsembleResEfficientNet(res_model, efficient_model, 392)
+        model.name = 'ensemble_resnet_efficientnet'
+    
+    elif model_name == 'ensemble_resnet_densenet_efficientnet': # sudah
+        model_transform = None
+        res_weights = models.ResNet50_Weights.DEFAULT
+        dense_weights = models.DenseNet201_Weights.DEFAULT
+        efficient_weights = models.EfficientNet_V2_S_Weights.DEFAULT
+        res_model = models.resnet50(weights=res_weights)
+        dense_model = models.densenet201(weights=dense_weights)
+        efficient_model = models.efficientnet_v2_s(weights=efficient_weights)
+        res_model.fc = nn.Linear(in_features=2048, out_features=num_classes)
+        dense_model.classifier = nn.Linear(in_features=1920, out_features=num_classes)
+        efficient_model.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
+        model = EnsembleResDenseEfficientNet(res_model, dense_model, efficient_model, 392)
+        model.name = 'ensemble_resnet_densenet_efficientnet'
     
     else:
         raise NotImplementedError

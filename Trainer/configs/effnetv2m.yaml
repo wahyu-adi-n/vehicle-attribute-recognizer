@@ -18,7 +18,7 @@ dataset:
   num_workers: 2
   
 model:
-  backbone: 'ensemble_resnet_densenet_efficientnet' # name of backbone or network models
+  backbone: 'efficientnet_v2_m' # name of backbone or network models
   input_size: [224, 224]
   num_classes: 196
 

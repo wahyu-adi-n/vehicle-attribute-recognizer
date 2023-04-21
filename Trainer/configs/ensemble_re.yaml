@@ -18,7 +18,7 @@ dataset:
   num_workers: 2
   
 model:
-  backbone: 'vit_b_16' # name of backbone or network models
+  backbone: 'ensemble_resnet_efficientnet' # name of backbone or network models
   input_size: [224, 224]
   num_classes: 196
 
