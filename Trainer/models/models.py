@@ -3,7 +3,6 @@ from torchvision import models
 from .ensemble_densenet_efficientnet import EnsembleDenseEfficientNet
 from .ensemble_resnet_densenet import EnsembleResDenseNet
 from .ensemble_resnet_efficientnet import EnsembleResEfficientNet
-from .ensemble_resnet_densenet_efficientnet import EnsembleResDenseEfficientNet
 
 def create_model(model_name: str,
                 fine_tune: bool,
@@ -46,7 +45,7 @@ def create_model(model_name: str,
         model.classifier[1] = nn.Linear(in_features=1280, 
                                         out_features=num_classes)
     
-    elif model_name == 'efficientnet_v2_m': # belum
+    elif model_name == 'efficientnet_v2_m': # sudah
         weights = models.EfficientNet_V2_M_Weights.DEFAULT
         model_transform = weights.transforms()
         model = models.efficientnet_v2_m(weights=weights)
@@ -111,7 +110,7 @@ def create_model(model_name: str,
         model = EnsembleResDenseNet(res_model, dense_model, 392)
         model.name = 'ensemble_resnet_densenet'
     
-    elif model_name == 'ensemble_resnet_efficientnet': # belum
+    elif model_name == 'ensemble_resnet_efficientnet': # sudah
         model_transform = None
         res_weights = models.ResNet50_Weights.DEFAULT
         efficient_weights = models.EfficientNet_V2_S_Weights.DEFAULT
@@ -121,20 +120,6 @@ def create_model(model_name: str,
         efficient_model.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
         model = EnsembleResEfficientNet(res_model, efficient_model, 392)
         model.name = 'ensemble_resnet_efficientnet'
-    
-    elif model_name == 'ensemble_resnet_densenet_efficientnet': # sudah
-        model_transform = None
-        res_weights = models.ResNet50_Weights.DEFAULT
-        dense_weights = models.DenseNet201_Weights.DEFAULT
-        efficient_weights = models.EfficientNet_V2_S_Weights.DEFAULT
-        res_model = models.resnet50(weights=res_weights)
-        dense_model = models.densenet201(weights=dense_weights)
-        efficient_model = models.efficientnet_v2_s(weights=efficient_weights)
-        res_model.fc = nn.Linear(in_features=2048, out_features=num_classes)
-        dense_model.classifier = nn.Linear(in_features=1920, out_features=num_classes)
-        efficient_model.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
-        model = EnsembleResDenseEfficientNet(res_model, dense_model, efficient_model, 392)
-        model.name = 'ensemble_resnet_densenet_efficientnet'
     
     else:
         raise NotImplementedError
