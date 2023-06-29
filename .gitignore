@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 Dataset/
 __pycache__
 Trainer/outputs
 *.pth
 *.pt
-=======
-Dataset/
-__pycache__
-Trainer/outputs
-*.pth
->>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
+kaggle.json
