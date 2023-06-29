@@ -63,10 +63,17 @@ def metrics_report_to_df(y_true, y_pred, dir_path):
 
 
 def save_plot_cm(y_true, y_pred, dir_path):
+<<<<<<< HEAD
     plt.figure(figsize=(20, 20), dpi=400)
     sns.set(font_scale=1)
     conf_matrix = confusion_matrix(y_true, y_pred)
     ax = sns.heatmap(conf_matrix, annot=False, vmin=0, fmt='g', cmap='Blues', cbar=False)
+=======
+    plt.figure(figsize=(21, 14), dpi=400)
+    sns.set(font_scale=1)
+    conf_matrix = confusion_matrix(y_true, y_pred)
+    ax = sns.heatmap(conf_matrix, annot=False)
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
     ax.set_xlabel("Predicted", fontsize=14, labelpad=20)
     ax.set_ylabel("Actual", fontsize=14, labelpad=20)
     figure = ax.get_figure()

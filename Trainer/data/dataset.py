@@ -1,11 +1,18 @@
 from data.base import DataModuleBase
 from torchvision import datasets, transforms
+<<<<<<< HEAD
 from torch.utils.data import DataLoader, WeightedRandomSampler
 import os
 import matplotlib.pyplot as plt
 import numpy as np
 
 class VehicleMakeModelDataset(DataModuleBase):
+=======
+from torch.utils.data import DataLoader
+
+
+class CarsDataset(DataModuleBase):
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
     def __init__(self, cfg):
         super().__init__(cfg)
         self.cfg = cfg
@@ -27,8 +34,12 @@ class VehicleMakeModelDataset(DataModuleBase):
             transforms.ToTensor(),
             transforms.Normalize(mean=cfg['dataset']['mean'],
                                  std=cfg['dataset']['std']),
+<<<<<<< HEAD
             transforms.RandomErasing(p=0.5, scale=(0.06, 0.08), ratio=(1,3)),
             
+=======
+            transforms.RandomErasing(p=0.1),
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
         ])
 
         self.test_val_transforms = transforms.Compose([
@@ -37,7 +48,10 @@ class VehicleMakeModelDataset(DataModuleBase):
             transforms.Normalize(mean=cfg['dataset']['mean'],
                                  std=cfg['dataset']['std'])
         ])
+<<<<<<< HEAD
 
+=======
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
         self.prepare_dataset()
 
     def prepare_dataset(self):
@@ -53,6 +67,7 @@ class VehicleMakeModelDataset(DataModuleBase):
             batch_size=self.train_bs,
             shuffle=True,
             num_workers=self.cfg['dataset']['num_workers'],
+<<<<<<< HEAD
             pin_memory=True,
         )
         self.train_dl = DataLoader(self.train_set, **kwargs)
@@ -122,6 +137,8 @@ class VehicleColorDataset(DataModuleBase):
             batch_size=self.train_bs,
             shuffle=True,
             num_workers=self.cfg['dataset']['num_workers'],
+=======
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
             pin_memory=True
         )
         self.train_dl = DataLoader(self.train_set, **kwargs)
@@ -148,4 +165,8 @@ class VehicleColorDataset(DataModuleBase):
         return self.test_dl
 
     def get_classes(self):
+<<<<<<< HEAD
         return self.train_set.classes
+=======
+        return self.train_set.classes
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f

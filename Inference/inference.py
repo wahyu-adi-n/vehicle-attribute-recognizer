@@ -31,7 +31,11 @@ def main(args):
               else torch.device('cpu')
     print(f"Computation device: {device}")
     print(f"Backbone model: {args.model}")
+<<<<<<< HEAD
     # print(f"Number of sample: {args.numsample}")
+=======
+    print(f"Number of sample: {args.numsample}")
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
     
     model_path = f"../Trainer/outputs/{args.model}/model-config-{args.model}.yaml" 
     
@@ -52,14 +56,24 @@ def main(args):
     
     test_images = glob.glob(args.testdir, recursive=True)
 
+<<<<<<< HEAD
     # i = 0
+=======
+    i = 0
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
     y_true = []
     y_pred  = []
     t0 = time.time()
     for image_path in test_images:
+<<<<<<< HEAD
         # if i == args.numsample:
         #   break
         # i += 1
+=======
+        if i == args.numsample:
+          break
+        i += 1
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
         image = cv2.imread(image_path)
         actual_class_name = image_path.split(os.path.sep)[-2]
         original_image = image.copy()
@@ -109,7 +123,11 @@ if __name__ == '__main__':
                         type=str, help="Model is used for inference")
 
     parser.add_argument('-td', '--testdir', 
+<<<<<<< HEAD
                         default='../Dataset/PKU/test/*/*.jpg', 
+=======
+                        default='../Dataset/test/*/*.jpg', 
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
                         type=str , help="Path to test directory" )
     
     parser.add_argument('-n', '--numsample', 

@@ -8,10 +8,18 @@ from comet_ml import Artifact, Experiment
 from utils.utils import generate_model_config, read_cfg, get_optimizer, \
       get_device, generate_hyperparameters, save_model, save_plots, SaveBestModel, \
       set_seeds, print_train_time
+<<<<<<< HEAD
 from data.dataset import VehicleMakeModelDataset, VehicleColorDataset
 from tqdm.auto import tqdm
 from models.models import create_model
 from utils.logger import get_logger
+=======
+from data.dataset import CarsDataset
+from tqdm.auto import tqdm
+from models.models import create_model
+from utils.logger import get_logger
+from utils.metrics import ClassificationMetrics
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
 
 def train_one_epoch(model: torch.nn.Module, 
                     train_loader: torch.utils.data.DataLoader,
@@ -29,7 +37,10 @@ def train_one_epoch(model: torch.nn.Module,
                         total=len(train_loader)):
 
         image, labels = X.to(device), y.to(device)
+<<<<<<< HEAD
         
+=======
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
 
         outputs = model(image)
 
@@ -65,6 +76,11 @@ def validate_one_epoch(model: torch.nn.Module,
     print('[2] Validation process...')
 
     val_loss, val_acc = 0.0, 0.0
+<<<<<<< HEAD
+=======
+    accuracy, precision, recall, f1_score = 0.0, 0.0, 0.0, 0.0
+    eval_metrics = ClassificationMetrics()
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
 
     model.eval()
 
@@ -83,12 +99,40 @@ def validate_one_epoch(model: torch.nn.Module,
             val_pred_labels = outputs.argmax(dim=1)
             val_acc += ((val_pred_labels == labels).sum().item()/len(val_pred_labels))
 
+<<<<<<< HEAD
     val_loss /= len(val_loader)
     val_acc /= len(val_loader)
 
     # Log metric for val loss and accuracy
     logger.log_metric("val_loss", val_loss, epoch=epoch)
     logger.log_metric("val_accuracy", val_acc, epoch=epoch)
+=======
+
+            classification_metrics = eval_metrics(labels.cpu(), 
+                                                  val_pred_labels.cpu())
+            
+            accuracy += classification_metrics['accuracy']
+            precision += classification_metrics['precision']
+            recall += classification_metrics['recall']
+            f1_score += classification_metrics['f1_score']
+
+        accuracy /= len(val_loader)
+        precision /= len(val_loader)
+        recall /= len(val_loader)
+        f1_score /= len(val_loader)
+
+    val_loss /= len(val_loader)
+    val_acc /= len(val_loader)
+
+    
+    # Log metric for val loss and accuracy
+    logger.log_metric("val_loss", val_loss, epoch=epoch)
+    logger.log_metric("val_accuracy", val_acc, epoch=epoch)
+    logger.log_metric("accuracy", accuracy, epoch=epoch)
+    logger.log_metric("precision", precision, epoch=epoch)
+    logger.log_metric("recall", recall, epoch=epoch)
+    logger.log_metric("f1_score", f1_score, epoch=epoch)
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
     
     return val_loss, val_acc
 
@@ -96,7 +140,10 @@ def train(model: torch.nn.Module,
           train_loader: torch.utils.data.DataLoader, 
           val_loader: torch.utils.data.DataLoader,  
           optimizer: torch.optim.Optimizer,  
+<<<<<<< HEAD
           scheduler,
+=======
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
           criterion: torch.nn.Module, 
           device: torch.device, 
           cfg):
@@ -119,9 +166,13 @@ def train(model: torch.nn.Module,
                                                 criterion, 
                                                 device, 
                                                 epoch)
+<<<<<<< HEAD
         
         scheduler.step()
       
+=======
+
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
         val_loss, val_acc = validate_one_epoch(model, 
                                               val_loader, 
                                               criterion, 
@@ -141,9 +192,15 @@ def train(model: torch.nn.Module,
         results['val_loss'].append(val_loss)
         results['val_acc'].append(val_acc)
 
+<<<<<<< HEAD
         save_best_model(model, val_loss, epoch, cfg)
 
     save_model(model, cfg)
+=======
+        save_best_model(model, optimizer, criterion, val_loss, epoch, cfg)
+
+    save_model(model, optimizer, criterion, epoch, cfg)
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
 
     save_plots(results['train_loss'], 
                 results['train_acc'], 
@@ -162,7 +219,10 @@ if __name__ == '__main__':
                         
     args = parser.parse_args()
     cfg = read_cfg(cfg_file=args.config)
+<<<<<<< HEAD
     print(cfg)
+=======
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
     hyperparameters = generate_hyperparameters(cfg)
 
     LOG = get_logger(cfg['model']['backbone'])
@@ -172,7 +232,11 @@ if __name__ == '__main__':
                         project_name=cfg['logger']['project_name'],
                         workspace=cfg['logger']['workspace']) 
 
+<<<<<<< HEAD
     artifact = Artifact("Vehicle Make-Model Recognition Artifact", "Model")
+=======
+    artifact = Artifact("Cars Artifact", "Model")
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
     LOG.info("Comet Logger has successfully loaded.")
 
     device = get_device(cfg)
@@ -187,6 +251,7 @@ if __name__ == '__main__':
 
 
     backbone, backbone_transform = create_model(model_name = cfg['model']['backbone'], 
+<<<<<<< HEAD
                                                 fine_tune = False,
                                                 num_classes = cfg['model']['num_classes'])
     backbone.to(device)
@@ -200,12 +265,29 @@ if __name__ == '__main__':
         col_width=20,
         row_settings=["var_names"]
     )
+=======
+                                                fine_tune = True)
+    backbone.to(device)
+    
+    # print(f"{backbone.__class__.__name__} Model Summary") 
+
+    # summary(model=backbone, 
+    #     input_size=(32, 3, 224, 224),
+    #     # col_names=["input_size"], # uncomment for smaller output
+    #     col_names=["input_size", "output_size", "num_params", "trainable"],
+    #     col_width=20,
+    #     row_settings=["var_names"]
+    # )
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
         
     LOG.info(f"Backbone {cfg['model']['backbone']} succesfully loaded.")
 
     optimizer = get_optimizer(cfg, backbone)
+<<<<<<< HEAD
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.33)
 
+=======
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
     LOG.info(f"Optimizer has been defined.")
 
     # Total parameters and trainable parameters.
@@ -221,6 +303,7 @@ if __name__ == '__main__':
     # initialize SaveBestModel class
     save_best_model = SaveBestModel()
 
+<<<<<<< HEAD
     print('Start to preparing datasets')
     
     # 1. VehicleMakeModelDataset
@@ -231,6 +314,10 @@ if __name__ == '__main__':
     dataset = VehicleColorDataset(cfg)
     train_dl = dataset.train_dataloader()
     print(train)
+=======
+    dataset = CarsDataset(cfg)
+    train_dl = dataset.train_dataloader()
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
     val_dl = dataset.val_dataloader()
     test_dl = dataset.test_dataloader()
     LOG.info(f"Dataset train, val, and test data loader successfully loaded.")
@@ -245,9 +332,14 @@ if __name__ == '__main__':
     
     train(model = backbone, 
           train_loader = train_dl, 
+<<<<<<< HEAD
           val_loader = val_dl, 
           optimizer = optimizer, 
           scheduler = scheduler,
+=======
+          val_loader = val_dl,
+          optimizer = optimizer, 
+>>>>>>> d18bb69c323308ecd641f0ef77695d31e1fe144f
           criterion = criterion, 
           device = device, 
           cfg = cfg)
