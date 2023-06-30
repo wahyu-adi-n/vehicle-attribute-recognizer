@@ -3,4 +3,5 @@ __pycache__
 Trainer/outputs
 *.pth
 *.pt
-kaggle.json
+/kaggle.json
+.ipynb_checkpoints
